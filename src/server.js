@@ -15,87 +15,9 @@ const { Server: Socket } = require("socket.io");
 const contenedorDB = require("../contenedores/contenedorDB.js");
 const { configMySQL, configSQLite } = require("./config.js");
 
-// Session
-const session = require("express-session");
-const passport = require("passport");
-const { Strategy: LocalStrategy } = require("passport-local");
-
-const mongoStore = require("connect-mongo");
-const advancedOptions = { useNewUrlParser: true, useUnifiedTopology: true };
-
-// --- Register & Login ----- //
-
-const usuarios = [];
-
-passport.use(
-  "register",
-  new LocalStrategy(
-    {
-      passReqToCallback: true,
-    },
-    (req, email, password, done) => {
-      const { acceso } = req.body;
-
-      const usuario = usuarios.find((usuario) => usuario.email == email);
-      if (usuario) {
-        return done("Usuario ya registrado");
-      }
-
-      const user = {
-        email,
-        password,
-        acceso,
-      };
-      usuarios.push(user);
-
-      return done(null, user);
-    }
-  )
-);
-
-passport.use(
-  "login",
-  new LocalStrategy((email, password, done) => {
-    const user = usuarios.find((usuario) => usuario.email == email);
-
-    if (!user) {
-      return done(null, false);
-    }
-
-    if (user.password != password) {
-      return done(null, false);
-    }
-
-    return done(null, user);
-  })
-);
-
-passport.serializeUser(function (user, done) {
-  done(null, user.username);
-});
-
-passport.deserializeUser(function (username, done) {
-  const usuario = usuarios.find((usuario) => usuario.email == email);
-  done(null, usuario);
-});
-
 // ------------- //
 
 const app = express();
-app.use(
-  session({
-    store: mongoStore.create({
-      mongoUrl: "mongodb://localhost/sesiones",
-      mongoOptions: advancedOptions,
-    }),
-    secret: process.env.SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 60000,
-    },
-  })
-);
 
 const httpServer = new HttpServer(app);
 const io = new Socket(httpServer);
