@@ -270,57 +270,10 @@ app.get("/info-procesos", compression(), (req, res) => {
   res.send(info);
 });
 
-// Fork y Cluster
+const PORT = process.env.PORT || 8080;
 
-const PORT = parseInt(process.argv[2]) || 8080;
-console.log("PUERTO= " + PORT);
-app.get("/", (req, res) => {
-  res.send(
-    `Servidor express en ${PORT} - <b>PID ${
-      process.pid
-    }</b> - ${new Date().toLocaleString()}`
-  );
+const server = app.listen(PORT, () => {
+  console.log(`Servidor escuchando en el puerto ${server.address().port}`);
 });
 
-app.listen(PORT, (err) => {
-  if (!err)
-    console.log(`Servidor express en ${PORT} - PID WORKER ${process.pid}`);
-});
-
-const numCPUs = require("os").cpus().length;
-
-if (cluster.isMaster) {
-  console.log(numCPUs);
-  console.log(`PID MASTER ${process.pid}`);
-
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
-  cluster.on("exit", (worker) => {
-    console.log(
-      "worker",
-      worker.process.pid,
-      "died",
-      new Date().toLocaleString()
-    );
-    cluster.fork();
-  });
-} else {
-  const PORT = parseInt(process.argv[2]) || 8080;
-  app.get("/", (req, res) => {
-    res.send(
-      `Servidor express en ${PORT} - <b>PID ${
-        process.pid
-      }</b> - ${new Date().toLocaleString()}`
-    );
-  });
-
-  app.get("/info", (req, res) => {
-    res.send(numCPUs);
-  });
-
-  app.listen(PORT, (err) => {
-    if (!err)
-      console.log(`Servidor express en ${PORT} - PID WORKER ${process.pid}`);
-  });
-}
+server.on("error", (error) => console.log(`Error en servidor ${error}`));
